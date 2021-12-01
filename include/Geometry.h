@@ -37,6 +37,7 @@ public:
      * buffers[0] -> vertex positions
      * buffers[1] -> vertex normals
      * buffers[2] -> vertex indices
+     */
     std::vector<GLuint> buffers; // data storage
     
     virtual void init(){};
