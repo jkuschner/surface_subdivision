@@ -2,6 +2,9 @@
 #include <unordered_map>
 #include <utility>
 
+//TODO: After doing the loop subdivition, need to calculate normals
+// w/ area weighted average
+
 typedef unsigned int uint;
 
 /*
@@ -9,9 +12,30 @@ typedef unsigned int uint;
  * edge with it's flipped version and return the
  * flipped edge
  * @param edge: the edge to be flipped
- * @return: the flipped edge
  */
-Edge Mesh::flip(Edge* edge) {
+void Mesh::flip(Edge* edge) {
+    struct Face* f1, f2;
+    f1 = edge->he->face;
+    f2 = edge->he->flip->face;
+    struct HalfEdge* m1, m2;
+    m1 = edge->he;
+    m2 = edge->he->flip;
+
+    m1->src = m1->next->next->src; // set src
+    m1->next = m2->next->next; // set dest
+    m2->src = m2->next->next->src; // repeat for flipside
+    m2->next = m1->next->next->next;
+    m1->next->next->next = m1; //set prev->next to this
+    m2->next->next->next = m2;
+
+    f1->he = m1;
+    f2->he = m2
+    m1->face = f1;
+    m2->face = f2;
+    m1->next->face = f1;
+    m2->next->face = f2;
+    m1->next->next->face = f1;
+    m2->next->next->face = f2;
 
 }
 
@@ -20,9 +44,8 @@ Edge Mesh::flip(Edge* edge) {
  * this one in half, increasing the number of triangles
  * in the mesh.
  * @param edge: the edge to be split
- * @return: the new edge
  */
-Edge Mesh::split(Edge* edge) {
+void Mesh::split(Edge* edge) {
 
 }
 
@@ -71,7 +94,6 @@ Mesh::Mesh(Obj* object) {
    
     struct HalfEdge* hedge1, hedge2, hedge3;
     struct Face* f;
-    struct Edge* e;
     std::unordered_map< std::pair<uint, uint>, HalfEdge* > m;
     // 3. create 3 halfedges for each triange
     // 4. populate map w/ vertex pairs and hedges
@@ -87,6 +109,13 @@ Mesh::Mesh(Obj* object) {
         hedge1->next = hedge2;
         hedge2->next = hedge3;
         hedge3->next = hedge1;
+        //assign Face* to arbitrary hedge in triangle
+        f = new Face;
+        f->he = hedge1;
+        // assign face ptr
+        hedge1->face = f;
+        hedge2->face = f;
+        hedge3->face = f;
         // add hedges to Mesh's vector
         hes.push_back(hedge1);
         hes.push_back(hedge2);
@@ -101,13 +130,7 @@ Mesh::Mesh(Obj* object) {
             {std::make_pair<uint, uint>(tmp2, tmp3), hedge2},
             {std::make_pair<uint, uint>(tmp3, tmp1), hedge3}
         });
-        //assign Face* and Edge* to arbitrary hedge in triangle
-        f = new Face;
-        f->he = hedge1;
         faces.push_back(f);
-        e = new Edge;
-        e->he = hedge1;
-        edges.push_back(e);
     }
 
     // 5. for each hedge get the flip using map
@@ -118,6 +141,16 @@ Mesh::Mesh(Obj* object) {
         key = std::make_pair<uint, uint>(hes[i]->next->src->index, 
                                             hes[i]->src->index);
         hes[i]->flip = m[key];
+    }
+        //TODO: Make an Edge for every PAIR of hedges
+    struct Edge* e;
+    for(int i = 0; i < hes.size(); i++) {
+        if(hes[i]->parent == null) {
+            e = new Edge;
+            hes[i]->parent = e;
+            hes[i]->flip->parent = e;
+            e->he = hes[i];
+        }
     }
 }
 
