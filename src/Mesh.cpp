@@ -5,6 +5,19 @@
 //TODO: After doing the loop subdivition, need to calculate normals
 // w/ area weighted average
 
+/* Full Subdiv algo:
+ * 1. Calculate positions of new Points
+ * 2. Calculate new positions of old Points
+ * 3. split all old edges and attatch to new Points
+ * 4. Meanwhile add all new edges to a new vector then swap vectors
+ *      !! Remember to free old edge pointers !!
+ * 5. flip all edges that connect new and old point
+ * 6. set all old Points to newPos
+ * 
+ *
+ * 
+ */
+
 typedef unsigned int uint;
 
 /*
@@ -40,13 +53,148 @@ void Mesh::flip(Edge* edge) {
 }
 
 /*
+ * Given an edge, find the "splitting point" and add 
+ * that point to pts w/ isNew = true and set the newPos
+ * value of edge to that location.
+ * @param edge: the edge to find the "splitting point" of
+ * @return: a pointer to the new Point
+ */
+Point* Mesh::makePoint(Edge* edge) {
+    struct Point* p = new Point;
+    p->isNew = true;
+    //get coord of 4 adjacent points
+    glm::vec3 P1, P2, p1, p2;
+    P1 = edge->he->src->pos;
+    P2 = edge->he->flip->src->pos;
+    p1 = edge->he->next->next->src->pos;
+    p2 = edge->he->flip->next->next->src->pos;
+    //calculate newPos
+    p->pos = (0.375f*P1) + (0.375f*P2) + (0.125f*p1) + (0.125f*p2);
+    //add to Mesh
+    pts.push_back(p);
+    //set edge's newPos
+    edge->newPos = p->pos;
+}
+
+/*
  * Given an edge, add another edge that splits
  * this one in half, increasing the number of triangles
  * in the mesh.
+ * 
+ * Should make 4 new edges and return them w/o adding to Mesh
+ * Should make new hedges and DO add those to Mesh
+ * Be sure to preserve all old hedge pointers
+ * Should make new face and DO add to Mesh
+ * Be sure to preserve old Face pointers
+ * 
  * @param edge: the edge to be split
+ * @return: All of the newly created edges
  */
-void Mesh::split(Edge* edge) {
+std::vector<Edge*> Mesh::split(Edge* edge) {
+    struct Point* p = makePoint(edge);
 
+    // save face pointers for later
+    struct Face* f1, f2, f3, f4;
+    f1 = edge->he->face;
+    f2 = edge->he->flip->face;
+    f3 = new Face;
+    f4 = new Face;
+
+    //old hedge pointers
+    struct HalfEdge* br, bl;
+    br = edge->he; // bottom-right
+    bl = edge->he->flip; // bottom-left
+    //new hedge pointers
+    struct HalfEdge* lb, lt, rb, rt, tr, tl;
+    lb = new HalfEdge; // left-bottom
+    lt = new HalfEdge; // left-top
+    rb = new HalfEdge; // right-bottom
+    rt = new HalfEdge; // right-top
+    tr = new HalfEdge; // top-right
+    tl = new HalfEdge; // top-left
+
+    br->src = p; // set br->src to middle point
+    lb->src = p; // set "" "" to middle point
+    lb->next = bl->flip->next->next; // set lb->next to AB edge
+    rb->src = br->next->next->src; // set rb->src to C
+    rb->next = br;
+    tl->src = p;
+    tl->next = bl->next;
+    bl->next = lb;
+    rt->src = p;
+    rt->next = br->next->next;
+    br->next->next = rb;
+    lt->src = lb->next->src;
+    lt->next = tl;
+    tr->src = tl->next->src;
+    tr->next = rt;
+
+    //set all flips
+    br->flip = bl;
+    bl->flip = br;
+    lb->flip = lt;
+    lt->flip = lb;
+    rb->flip = rt;
+    rt->flip = rb;
+    tr->flip = tl;
+    tl->flip = tr;
+
+    //set all faces
+    f1->he = br;
+    f2->he = bl;
+    f3->he = tl;
+    f4->he = tr;
+    
+    br->face = f1;
+    br->next->face = f1;
+    br->next->next->face = f1;
+    bl->face = f2;
+    bl->next->face = f2;
+    bl->next->next->face = f2;
+    tl->face = f3;
+    tl->next->face = f3;
+    tl->next->next->face = f3;
+    tr->face = f4;
+    tr->next->face = f4;
+    tr->next->next->face = f4;
+
+    // make new edges
+    std::vector<Edge*> newEdges;
+    for(int i = 0; i < 4; i++) {
+        newEdges[i] = new Edge;
+        newEdges[i]->isNew = true; //??? maybe not needed
+    }
+    newEdges[0]->he = br;
+    newEdges[1]->he = rb;
+    newEdges[2]->he = tr;
+    newEdges[3]->he = lb;
+    
+    //assign parent edges
+    br->parent = newEdges[0];
+    bl->parent = newEdges[0];
+    rb->parent = newEdges[1];
+    rt->parent = newEdges[1];
+    tr->parent = newEdges[2];
+    tl->parent = newEdges[3];
+    lb->parent = newEdges[4];
+    lt->parent = newEdges[4];
+
+    // add hedges and faces to Mesh
+    hes.push_back(br);
+    hes.push_back(bl);
+    hes.push_back(rb);
+    hes.push_back(rt);
+    hes.push_back(tr);
+    hes.push_back(tl);
+    hes.push_back(lb);
+    hes.push_back(lt);
+
+    faces.push_back(f1);
+    faces.push_back(f2);
+    faces.push_back(f3);
+    faces.push_back(f4);
+
+    return newEdges;
 }
 
 struct Triangle {
@@ -75,6 +223,8 @@ Mesh::Mesh(Obj* object) {
         p->pos = object->buffer[0][i];
         p->normal = object->buffer[1][i];
         p->index = object->buffer[2][i];
+        p->newPos = NULL;
+        p->isNew = false;
         // TODO: remove duplicates from pts
         pts.push_back(p);
 
@@ -105,6 +255,10 @@ Mesh::Mesh(Obj* object) {
         hedge1->src = t_list[i].v1;
         hedge2->src = t_list[i].v2;
         hedge3->src = t_list[i].v3;
+        // assign Point.he ptr
+        t_list[i].v1->he = hedge1;
+        t_list[i].v2->he = hedge2;
+        t_list[i].v3->he = hedge3;
         // assign next ptr
         hedge1->next = hedge2;
         hedge2->next = hedge3;
@@ -150,6 +304,9 @@ Mesh::Mesh(Obj* object) {
             hes[i]->parent = e;
             hes[i]->flip->parent = e;
             e->he = hes[i];
+            e->newPos = NULL;
+            e->isNew = false;
+            edges.push_back(e);
         }
     }
 }

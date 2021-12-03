@@ -17,9 +17,10 @@ struct Point {
     HalfEdge* he;
     glm::vec3 pos;
     glm::vec3 normal;
+    glm::vec3 newPos;
     unsigned int index;
-    // newpos
-    // isnew
+    bool isNew;
+    
 };
 
 struct Face {
@@ -28,7 +29,8 @@ struct Face {
 
 struct Edge {
     HalfEdge* he;
-    // newpos for the new point
+    glm::vec3 newPos;
+    bool isNew;
 };
 
 class Mesh : public Geometry {
