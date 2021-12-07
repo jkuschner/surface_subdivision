@@ -6,15 +6,18 @@
 // w/ area weighted average
 
 /* Full Subdiv algo:
- * 1. Calculate positions of new Points
- * 2. Calculate new positions of old Points
- * 3. split all old edges and attatch to new Points
+ * 1. Calculate positions of new Points (movePoint)
+ * 2. Calculate new positions of old Points (split)
+ * 3. split all old edges and attatch to new Points (split)
  * 4. Meanwhile add all new edges to a new vector then swap vectors
  *      !! Remember to free old edge pointers !!
- * 5. flip all NEW edges that connect new and old point
- * 6. set all old Points to newPos
+ * 5. flip all NEW edges that connect new and old point (flip)
+ * 6. set all old Points to newPos (updatePointPos)
  * 
- *
+ * To display after subdividing:
+ * 1. Calculate normals for all vertices using cross product(calcNormals)
+ * 2. generate vertex and connectivity buffers(makeBuffers)
+ * 3. do some OpenGL magic and display it
  * 
  */
 
@@ -341,6 +344,46 @@ Mesh::Mesh(Obj* object) {
             edges.push_back(e);
         }
     }
+}
+
+void Mesh::updatePointPos() {
+    for (int i = 0; i < pts.size(); i++) {
+        pts[i]->pos = pts[i]->newPos;
+        pts[i]->isNew = false;
+    }
+}
+
+/* For each vertex, find the area-weighted average
+ * of all surrounding face normals to get the new 
+ * normal for this vertex
+ * Aglo:
+ * 1. init glm::vec3 res
+ * 2. For each adjacent face,
+ *  2a. get 2 edge vectors and take cross product
+ *  2b. add to res
+ * 3. normalize res
+ */
+void Mesh::calcNormals() {
+    glm::vec3 res, edge1, edge2;
+    HalfEdge* he, he0;
+    for (int i = 0; i < pts.size(); i++) {
+        res = glm::vec3(0.0f, 0.0f, 0.0f);
+        he0 = pts[i]->he;
+
+        do {
+            //Visit
+            edge1 = he->src->pos - he->flip->src->pos;
+            edge2 = he->next->src->pos - he->next->flip->src->pos;
+            res += glm::cross(edge2, edge1);
+            he = he->flip->next;
+        } while(he != he0);
+
+        pts[i]->normal = glm::normalize(res);
+    }
+}
+
+void Mesh::makeBuffers() {
+
 }
 
 /*

@@ -44,9 +44,13 @@ class Mesh : public Geometry {
 
         static glm::vec3 movePoint(Point* p);
 
+        void updatePointPos();
         Point* makePoint(Edge* edge);
         void flip(Edge* edge);
         std::vector<Edge*> split(Edge* edge);
+
+        void calcNormals();
+        void makeBuffers();
         
         Mesh(Obj* object);
 };
