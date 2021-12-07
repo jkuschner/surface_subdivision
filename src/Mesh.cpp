@@ -11,7 +11,7 @@
  * 3. split all old edges and attatch to new Points
  * 4. Meanwhile add all new edges to a new vector then swap vectors
  *      !! Remember to free old edge pointers !!
- * 5. flip all edges that connect new and old point
+ * 5. flip all NEW edges that connect new and old point
  * 6. set all old Points to newPos
  * 
  *
@@ -191,12 +191,15 @@ std::vector<Edge*> Mesh::split(Edge* edge) {
     std::vector<Edge*> newEdges;
     for(int i = 0; i < 4; i++) {
         newEdges[i] = new Edge;
-        newEdges[i]->isNew = true; //??? maybe not needed
+        newEdges[i]->isNew = true; 
     }
     newEdges[0]->he = br;
     newEdges[1]->he = rb;
     newEdges[2]->he = tr;
     newEdges[3]->he = lb;
+
+    newEdges[0]->isNew = false; //these used to be the old edge
+    newEdges[2]->isNew = false; //from top to bottom
     
     //assign parent edges
     br->parent = newEdges[0];
