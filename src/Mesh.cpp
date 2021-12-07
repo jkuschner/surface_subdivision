@@ -53,6 +53,35 @@ void Mesh::flip(Edge* edge) {
 }
 
 /*
+ * Calculate the new position of a Point based on the
+ * surrounding points.
+ * @param p: The original Point
+ * @return: the vector location of the new position
+ */
+static glm::vec3 movePoint(Point* p) {
+    std::vector<glm::vec3> valence;
+    Halfedge* he, he0;
+    he0 = p->he;
+    // add all adjacent point positions to valence
+    do {
+        valence.push_back(he->flip->src->pos);
+        he = he->flip->next;
+    } while(he != he0);
+
+    // k == valence.size()
+    float beta = 3.0f / 16.0f;
+    if (valence.size() > 3) {
+        beta = 3.0f / (8.0f * valence.size());
+    }
+
+    glm::vec3 res = (1.0f - (valence.size()*beta)) * p->pos;
+    for(int i = 0; i < valence.size(); i++) {
+        res += beta * valence[i];
+    }
+    return res;
+}
+
+/*
  * Given an edge, find the "splitting point" and add 
  * that point to pts w/ isNew = true and set the newPos
  * value of edge to that location.
