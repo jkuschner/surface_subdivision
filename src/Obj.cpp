@@ -68,18 +68,26 @@ void Obj::init(const char * filename){
     // post processing
     std::cout << "Processing data...";
     unsigned int n = temp_vertexIndices.size(); // #(triangles)*3
-    vertices.resize(n);
-    normals.resize(n);
-    indices.resize(n);
+    vertices = temp_vertices;
+    normals.resize(vertices.size());
+    for(int i = 0; i < n; i++) {
+        normals[temp_vertexIndices[i]] = temp_normals[temp_normalIndices[i]];
+    }
+    indices = temp_vertexIndices;
+    //vertices.resize(n);
+    //normals.resize(n);
+    //indices.resize(n);
+    /*
     for (unsigned int i = 0; i<n; i++){
         indices[i] = i;
         vertices[i] = temp_vertices[ temp_vertexIndices[i] - 1 ];
         normals[i] = temp_normals[ temp_normalIndices[i] - 1 ];
     }
-    std::cout << "done." << std::endl;
+    */
+    std::cout << "done with " << filename << std::endl;
     
     // setting up buffers
-    std::cout << "Setting up buffers...";
+    std::cout << "Setting up buffers..." << std::endl;
     glGenVertexArrays(1, &vao );
     buffers.resize(3);
     glGenBuffers(3, buffers.data());
@@ -87,16 +95,21 @@ void Obj::init(const char * filename){
     
     // 0th attribute: position
     glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, n*sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void*)0);
     
     // 1st attribute: normal
     glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-    glBufferData(GL_ARRAY_BUFFER, n*sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+    std::cout << "buffer bound..." << std::endl;
+    glBufferData(GL_ARRAY_BUFFER, normals.size()*sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+    std::cout << "buffer data..." << std::endl;
     glEnableVertexAttribArray(1);
+    std::cout << "vertexattrib enabled..." << std::endl;
     glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+    std::cout << "finished normals buffer..." << std::endl;
     
+
     // indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[2]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, n*sizeof(indices[0]), &indices[0], GL_STATIC_DRAW);

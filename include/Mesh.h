@@ -42,6 +42,11 @@ class Mesh : public Geometry {
 
         //void init(const char* filename);
 
-        Edge flip(Edge* edge);
-        Edge split(Edge* edge);
+        static glm::vec3 movePoint(Point* p);
+
+        Point* makePoint(Edge* edge);
+        void flip(Edge* edge);
+        std::vector<Edge*> split(Edge* edge);
+        
+        Mesh(Obj* object);
 };
