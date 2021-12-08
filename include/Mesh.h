@@ -19,6 +19,7 @@ struct Point {
     glm::vec3 pos;
     glm::vec3 normal;
     glm::vec3 newPos;
+    unsigned int index;
     bool isNew;
 };
 

@@ -286,7 +286,8 @@ std::vector<Edge*> Mesh::split(Edge* edge) {
 
 struct Triangle {
     struct Point* v1, v2, v3;
-}
+};
+
 Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBuffer) {
     /* object contains list linear array of vertex
      * buffer[2] is a list of triangles in groups of 3
@@ -305,7 +306,7 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
     for(int i = 0; i < vertexBuffer.size(); i++) {
         // 1. create list of Point w/o hedges
         p = new Point;
-        p->pos = object->buffer[0][i];
+        p->pos = vertexBuffer[i];
         p->newPos = NULL;
         p->isNew = false;
         pts.push_back(p);
@@ -426,8 +427,59 @@ void Mesh::calcNormals() {
     }
 }
 
+/* Create the vertex, normal, and connectivity buffers from the
+ * Point fields and faces. Then, bind those buffers to OpenGL
+ */
 void Mesh::bindBuffers() {
-    //TODO
+    // set normals field in all Points
+    this->calcNormals();
+
+    // init buffers
+    std::vector<glm::vec3> vertex, normal;
+    std::vector<uint> connectivity;
+
+    // populate vertex and normal buffers
+    for(int i = 0; i < pts.size(); i++) {
+        pts[i]->index = i;
+        vertex.push_back(pts[i]->pos);
+        normal.push_back(pts[i]->normal);
+    }
+
+    // populate connectivity buffer
+    HalfEdge* he, he0;
+    for(int i = 0; i < faces.size(); i++) {
+        he0 = faces[i]->he;
+        he = he0;
+        do {
+            connectivity.push_back(he->src->index);
+            he = he->next;
+        } while(he != he0);
+    }
+
+    // setting up buffers
+    glGenVertexArrays(1, &vao);
+    buffers.resize(3);
+    glGenBuffers(3, buffers.data());
+    glBindVertexArray(vao);
+
+    // position
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, vertex.size()*sizeof(glm::vec3), &vertex[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    // normals
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+    glBufferData(GL_ARRAY_BUFFER, normal.size()*sizeof(glm::vec3), &normal[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    // connectivity
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+    glBufferData(GL_ARRAY_BUFFER, connectivity.size()*sizeof(glm::vec3), &connectivity[0], GL_STATIC_DRAW);
+
+    count = connectivity.size();
+    glBindVertexArray(0);
 }
 
 Mesh::~Mesh() {
