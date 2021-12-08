@@ -6,13 +6,7 @@
 #ifndef __MESH_H__
 #define __MESH_H__
 
-struct HalfEdge {
-    HalfEdge* next;
-    HalfEdge* flip;
-    Point* src;
-    Face* face;
-    Edge* parent;
-};
+struct HalfEdge;
 
 struct Point {
     HalfEdge* he;
@@ -31,6 +25,14 @@ struct Edge {
     HalfEdge* he;
     glm::vec3 newPos;
     bool isNew;
+};
+
+struct HalfEdge {
+    HalfEdge* next;
+    HalfEdge* flip;
+    Point* src;
+    Face* face;
+    Edge* parent;
 };
 
 class Mesh : public Geometry {

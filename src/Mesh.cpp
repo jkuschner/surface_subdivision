@@ -81,10 +81,12 @@ void Mesh::subdivide() {
  * @param edge: the edge to be flipped
  */
 void Mesh::flip(Edge* edge) {
-    struct Face* f1, f2;
+    struct Face* f1;
+    struct Face* f2;
     f1 = edge->he->face;
     f2 = edge->he->flip->face;
-    struct HalfEdge* m1, m2;
+    struct HalfEdge* m1;
+    struct HalfEdge* m2;
     m1 = edge->he;
     m2 = edge->he->flip;
 
@@ -96,7 +98,7 @@ void Mesh::flip(Edge* edge) {
     m2->next->next->next = m2;
 
     f1->he = m1;
-    f2->he = m2
+    f2->he = m2;
     m1->face = f1;
     m2->face = f2;
     m1->next->face = f1;
@@ -114,7 +116,8 @@ void Mesh::flip(Edge* edge) {
  */
 static glm::vec3 movePoint(Point* p) {
     std::vector<glm::vec3> valence;
-    Halfedge* he, he0;
+    struct HalfEdge* he;
+    struct HalfEdge* he0;
     he0 = p->he;
     // add all adjacent point positions to valence
     do {
@@ -158,6 +161,7 @@ Point* Mesh::makePoint(Edge* edge) {
     pts.push_back(p);
     //set edge's newPos
     edge->newPos = p->pos;
+    return p;
 }
 
 /*
@@ -178,18 +182,27 @@ std::vector<Edge*> Mesh::split(Edge* edge) {
     struct Point* p = makePoint(edge);
 
     // save face pointers for later
-    struct Face* f1, f2, f3, f4;
+    struct Face* f1;
+    struct Face* f2;
+    struct Face* f3;
+    struct Face* f4;
     f1 = edge->he->face;
     f2 = edge->he->flip->face;
     f3 = new Face;
     f4 = new Face;
 
     //old hedge pointers
-    struct HalfEdge* br, bl;
+    struct HalfEdge* br;
+    struct HalfEdge* bl;
     br = edge->he; // bottom-right
     bl = edge->he->flip; // bottom-left
     //new hedge pointers
-    struct HalfEdge* lb, lt, rb, rt, tr, tl;
+    struct HalfEdge* lb;
+    struct HalfEdge* lt;
+    struct HalfEdge* rb;
+    struct HalfEdge* rt;
+    struct HalfEdge* tr;
+    struct HalfEdge* tl;
     lb = new HalfEdge; // left-bottom
     lt = new HalfEdge; // left-top
     rb = new HalfEdge; // right-bottom
@@ -285,7 +298,14 @@ std::vector<Edge*> Mesh::split(Edge* edge) {
 }
 
 struct Triangle {
-    struct Point* v1, v2, v3;
+    struct Point* v1;
+    struct Point* v2;
+    struct Point* v3;
+};
+
+struct Key {
+    uint a;
+    uint b;
 };
 
 Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBuffer) {
@@ -307,8 +327,8 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         // 1. create list of Point w/o hedges
         p = new Point;
         p->pos = vertexBuffer[i];
-        p->newPos = NULL;
         p->isNew = false;
+        p->index = i;
         pts.push_back(p);
     }
     for(int i = 0; i < connectivityBuffer.size(); i++) {
@@ -323,9 +343,11 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         }
     }
    
-    struct HalfEdge* hedge1, hedge2, hedge3;
+    struct HalfEdge* hedge1;
+    struct HalfEdge* hedge2;
+    struct HalfEdge* hedge3;
     struct Face* f;
-    std::unordered_map< std::pair<uint, uint>, HalfEdge* > m;
+    std::unordered_map< Key, HalfEdge* > m;
     // 3. create 3 halfedges for each triange
     // 4. populate map w/ vertex pairs and hedges
     for(int i = 0; i < t_list.size(); i++) {
@@ -360,32 +382,36 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         tmp1 = t_list[i].v1->index;
         tmp2 = t_list[i].v2->index;
         tmp3 = t_list[i].v3->index;
-        m.insert({
-            {std::make_pair<uint, uint>(tmp1, tmp2), hedge1},
-            {std::make_pair<uint, uint>(tmp2, tmp3), hedge2},
-            {std::make_pair<uint, uint>(tmp3, tmp1), hedge3}
-        });
+        struct Key key1 = {tmp1, tmp2};
+        struct Key key2 = {tmp2, tmp3};
+        struct Key key3 = {tmp3, tmp1};
+
+        m.insert(std::make_pair(key1, hedge1));
+        m.insert(std::make_pair(key2, hedge2));
+        m.insert(std::make_pair(key3, hedge3));
         faces.push_back(f);
     }
 
     // 5. for each hedge get the flip using map
-    std::pair<uint, uint> key;
+    struct Key key;
     for(int i = 0; i < hes.size(); i++) {
         // hes[i] goes from src->dest, so the flip is dest->src
         // where dest := he->next->src
-        key = std::make_pair<uint, uint>(hes[i]->next->src->index, 
-                                            hes[i]->src->index);
+        //key = std::make_pair(hes[i]->next->src->index, 
+         //                                   hes[i]->src->index);
+        key.a = hes[i]->next->src->index;
+        key.b = hes[i]->src->index;
+
         hes[i]->flip = m[key];
     }
         //TODO: Make an Edge for every PAIR of hedges
     struct Edge* e;
     for(int i = 0; i < hes.size(); i++) {
-        if(hes[i]->parent == null) {
+        if(hes[i]->parent == nullptr) {
             e = new Edge;
             hes[i]->parent = e;
             hes[i]->flip->parent = e;
             e->he = hes[i];
-            e->newPos = NULL;
             e->isNew = false;
             edges.push_back(e);
         }
@@ -411,7 +437,8 @@ void Mesh::updatePointPos() {
  */
 void Mesh::calcNormals() {
     glm::vec3 res, edge1, edge2;
-    HalfEdge* he, he0;
+    struct HalfEdge* he;
+    struct HalfEdge* he0;
     for (int i = 0; i < pts.size(); i++) {
         res = glm::vec3(0.0f, 0.0f, 0.0f);
         he0 = pts[i]->he;
@@ -446,7 +473,8 @@ void Mesh::bindBuffers() {
     }
 
     // populate connectivity buffer
-    HalfEdge* he, he0;
+    struct HalfEdge* he;
+    struct HalfEdge* he0;
     for(int i = 0; i < faces.size(); i++) {
         he0 = faces[i]->he;
         he = he0;
@@ -483,8 +511,16 @@ void Mesh::bindBuffers() {
 }
 
 Mesh::~Mesh() {
-    delete pts;
-    delete hes;
-    delete faces;
-    delete edges;
+    for(int i = 0; i < pts.size(); i++) {
+        delete pts[i];
+    }
+    for(int i = 0; i < hes.size(); i++) {
+        delete hes[i];
+    }
+    for(int i = 0; i < faces.size(); i++) {
+        delete faces[i];
+    }
+    for(int i = 0; i < edges.size(); i++) {
+        delete edges[i];
+    }
 }
