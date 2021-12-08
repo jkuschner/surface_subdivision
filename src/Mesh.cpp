@@ -2,18 +2,7 @@
 #include <unordered_map>
 #include <utility>
 
-//TODO: After doing the loop subdivition, need to calculate normals
-// w/ area weighted average
-
-/* Full Subdiv algo:
- * 1. Calculate positions of new Points (movePoint)
- * 2. Calculate new positions of old Points (split)
- * 3. split all old edges and attatch to new Points (split)
- * 4. Meanwhile add all new edges to a new vector then swap vectors
- *      !! Remember to free old edge pointers !!
- * 5. flip all NEW edges that connect new and old point (flip)
- * 6. set all old Points to newPos (updatePointPos)
- * 
+/*
  * To display after subdividing:
  * 1. Calculate normals for all vertices using cross product(calcNormals)
  * 2. generate vertex and connectivity buffers(makeBuffers)
@@ -22,6 +11,60 @@
  */
 
 typedef unsigned int uint;
+
+/* Full Subdiv algo:
+ * 1. Calculate new positions of old Points (movePoint)
+ * 2. Calculate positions of new Points (split)
+ * 3. split all edges and attatch to new Points (split)
+ * 4. Meanwhile add all new edges to a new vector then swap vectors
+ *      !! Remember to free old edge pointers !!
+ * 5. flip all NEW edges that connect new and old point (flip)
+ * 6. set all old Points to newPos (updatePointPos)
+ * 
+ * A single iteration of the subdivision algorithm
+ */
+void Mesh::subdivide() {
+    // set newPos field for all existing points
+    for(int i = 0; i < pts.size(); i++) {
+        pts[i]->newPos = Mesh::movePoint(pts[i]);
+    }
+    
+    // make new points and edges by splitting all edges
+    std::vector<Edge*> newEdges, tmpEdges;
+    for(int i = 0; i < edges.size(); i++) {
+        // split creates new point and adds to pts
+        // also creates new hedges and faces and adds to Mesh
+        tmpEdges = this->split(edges[i]);
+
+        // add all new edges to the new vector
+        // TODO: probably a better way to do this, check std::vector docs
+        for(int j = 0; j < tmpEdges.size(); j++) {
+            newEdges.push_back(tmpEdges[j]);
+        }
+    }
+    
+    // free all of the now obsolete Edge pointers
+    for (int i = 0; i < edges.size(); i++) {
+        delete edges[i];
+    }
+    // set edges to our new vector
+    edges = newEdges;
+
+    // flip all NEW edges that connect a new and old point
+    for(int i = 0; i < edges.size(); i++) {
+        if(edges[i]->isNew) {
+            // if this edge connects a new and old point
+            if(edges[i]->he->src->isNew != edges[i]->he->flip->src->isNew) {
+                this->flip(edges[i]);
+            }
+        }
+    }
+
+    // set all pos Point fields to newPos
+    // and set all isNew Point fields to false
+    this->updatePointPos();
+
+}
 
 /*
  * Given an edge in a Mesh object, replace the
@@ -101,7 +144,8 @@ Point* Mesh::makePoint(Edge* edge) {
     p1 = edge->he->next->next->src->pos;
     p2 = edge->he->flip->next->next->src->pos;
     //calculate newPos
-    p->pos = (0.375f*P1) + (0.375f*P2) + (0.125f*p1) + (0.125f*p2);
+    //p->pos = (0.375f*P1) + (0.375f*P2) + (0.125f*p1) + (0.125f*p2);
+    p->newPos = (0.375f*P1) + (0.375f*P2) + (0.125f*p1) + (0.125f*p2);
     //add to Mesh
     pts.push_back(p);
     //set edge's newPos
@@ -365,7 +409,6 @@ void Mesh::calcNormals() {
         he0 = pts[i]->he;
 
         do {
-            //Visit
             edge1 = he->src->pos - he->flip->src->pos;
             edge2 = he->next->src->pos - he->next->flip->src->pos;
             res += glm::cross(edge2, edge1);
@@ -377,7 +420,14 @@ void Mesh::calcNormals() {
 }
 
 void Mesh::makeBuffers() {
+    //TODO
+}
 
+Mesh::~Mesh() {
+    delete pts;
+    delete hes;
+    delete faces;
+    delete edges;
 }
 
 /*

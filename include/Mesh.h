@@ -18,7 +18,6 @@ struct Point {
     glm::vec3 pos;
     glm::vec3 normal;
     glm::vec3 newPos;
-    unsigned int index;
     bool isNew;
     
 };
@@ -44,14 +43,17 @@ class Mesh : public Geometry {
 
         static glm::vec3 movePoint(Point* p);
 
-        void updatePointPos();
         Point* makePoint(Edge* edge);
-        void flip(Edge* edge);
         std::vector<Edge*> split(Edge* edge);
+        void flip(Edge* edge);
+
+        void updatePointPos();
+        void subdivide();
 
         void calcNormals();
         void makeBuffers();
         
         Mesh(std::vector<glm::vec3> vertexBuffer,
              std::vector<unsigned int> connectivityBuffer);
+        ~Mesh();
 };
