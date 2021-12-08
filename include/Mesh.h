@@ -19,7 +19,6 @@ struct Point {
     glm::vec3 normal;
     glm::vec3 newPos;
     bool isNew;
-    
 };
 
 struct Face {
@@ -51,9 +50,8 @@ class Mesh : public Geometry {
         void subdivide();
 
         void calcNormals();
-        void makeBuffers();
+        void bindBuffers();
         
-        Mesh(std::vector<glm::vec3> vertexBuffer,
-             std::vector<unsigned int> connectivityBuffer);
+        Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<unsigned int> connectivityBuffer);
         ~Mesh();
 };

@@ -15,6 +15,7 @@
 #include "Shader.h"
 #include "Cube.h"
 #include "Obj.h"
+#include "Mesh.h"
 #include "Camera.h"
 
 
@@ -24,7 +25,8 @@ static const char* title = "Model viewer";
 static const glm::vec4 background(0.1f, 0.2f, 0.3f, 1.0f);
 static Cube cube;
 static Obj teapot;
-static Obj bunny;
+static Obj ico_obj;
+static Mesh ico;
 static Camera camera;
 struct NormalShader : Shader {
     
@@ -61,7 +63,7 @@ void printHelp(){
       press the arrow keys to rotate camera.
       press 'r' to reset camera.
       press 'p' to toggle orthographic/perspective.
-      press '1','2','3' to select cube, teapot, bunny.
+      press '1','2','3' to select cube, teapot, icosahedron.
     
       press Spacebar to generate images for hw2 submission.
     
@@ -77,7 +79,9 @@ void initialize(void){
     // Initialize geometries
     cube.init();
     teapot.init("models/teapot.obj");
-    bunny.init("models/bunny.obj");
+    ico_obj.init("models/ico.obj");
+    // TODO: initialize Mesh ico
+    ico = Mesh(ico_obj.vertexBuffer, ico_obj.connectivityBuffer);
     
     // Initialize camera (set default values)
     camera.eye_default = glm::vec3(0.0f, 0.2f, 5.0f);
@@ -116,7 +120,7 @@ void display(void){
         case 2:
             teapot.draw();
             break;
-        case 3: bunny.draw();
+        case 3: ico_obj.draw();
             break;
     }
     // END draw
