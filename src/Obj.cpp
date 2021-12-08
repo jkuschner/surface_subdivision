@@ -64,26 +64,22 @@ void Obj::init(const char * filename){
         }
     }
     std::cout << "done." << std::endl;
+
+    // Mesh buffers
+    this->vertexBuffer = temp_vertices;
+    this->connectivityBuffer = temp_vertexIndices;
     
     // post processing
     std::cout << "Processing data...";
     unsigned int n = temp_vertexIndices.size(); // #(triangles)*3
-    vertices = temp_vertices;
-    normals.resize(vertices.size());
-    for(int i = 0; i < n; i++) {
-        normals[temp_vertexIndices[i]] = temp_normals[temp_normalIndices[i]];
-    }
-    indices = temp_vertexIndices;
-    //vertices.resize(n);
-    //normals.resize(n);
-    //indices.resize(n);
-    /*
+    vertices.resize(n);
+    normals.resize(n);
+    indices.resize(n);
     for (unsigned int i = 0; i<n; i++){
         indices[i] = i;
         vertices[i] = temp_vertices[ temp_vertexIndices[i] - 1 ];
         normals[i] = temp_normals[ temp_normalIndices[i] - 1 ];
     }
-    */
     std::cout << "done with " << filename << std::endl;
     
     // setting up buffers

@@ -233,11 +233,10 @@ std::vector<Edge*> Mesh::split(Edge* edge) {
 }
 
 struct Triangle {
-    //unsigned int v1, v2, v3;
     struct Point* v1, v2, v3;
 }
-
-Mesh::Mesh(Obj* object) {
+Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, 
+           std::vector<uint> connectivityBuffer) {
     /* object contains list linear array of vertex
      * buffer[2] is a list of triangles in groups of 3
      * 
@@ -252,27 +251,22 @@ Mesh::Mesh(Obj* object) {
     struct Point* p;
     struct Triangle t;
     std::vector<Triangle> t_list;
-    for(int i = 0; i < object->count; i++) {
+    for(int i = 0; i < vertexBuffer.size(); i++) {
         // 1. create list of Point w/o hedges
         p = new Point;
         p->pos = object->buffer[0][i];
-        p->normal = object->buffer[1][i];
-        p->index = object->buffer[2][i];
         p->newPos = NULL;
         p->isNew = false;
-        // TODO: remove duplicates from pts
         pts.push_back(p);
-
+    }
+    for(int i = 0; i < connectivityBuffer.size(); i++) {
         // 2. create list of triangles
         if (i % 3 == 0) {
-            //t.v1 = object->buffer[2][i];
-            t.v1 = p;
+            t.v1 = pts[connectivityBuffer[i]];
         } else if (i % 3 == 1) {
-            //t.v2 = object->buffer[2][i];
-            t.v2 = p;
+            t.v2 = pts[connectivityBuffer[i]];
         } else {
-            //t.v3 = object->buffer[2][i];
-            t.v3 = p;
+            t.v3 = pts[connectivityBuffer[i]];
             t_list.push_back(t);
         }
     }

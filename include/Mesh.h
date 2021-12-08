@@ -52,5 +52,6 @@ class Mesh : public Geometry {
         void calcNormals();
         void makeBuffers();
         
-        Mesh(Obj* object);
+        Mesh(std::vector<glm::vec3> vertexBuffer,
+             std::vector<unsigned int> connectivityBuffer);
 };

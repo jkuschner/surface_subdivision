@@ -10,7 +10,8 @@ that loads an obj file.
 
 class Obj : public Geometry {
 public:
-
+    std::vector<glm::vec3> vertexBuffer;
+    std::vector<unsigned int> connectivityBuffer;
     void init(const char * filename);
         
 };
