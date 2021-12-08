@@ -1,6 +1,14 @@
-#include "Mesh.h"
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#include <GLUT/glut.h>
+#else
+#include <GL/glew.h>
+#include <GL/glut.h>
+#endif
+
 #include <unordered_map>
 #include <utility>
+#include "Mesh.h"
 
 /*
  * To display after subdividing:

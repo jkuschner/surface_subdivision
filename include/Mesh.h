@@ -1,9 +1,10 @@
 #define GLM_FORCE_RADIANS
-#include "Obj.h"
+#include <glm/glm.hpp>
 #include "Geometry.h"
 #include <iostream>
 #include <vector>
-#include <glm/glm.hpp>
+#ifndef __MESH_H__
+#define __MESH_H__
 
 struct HalfEdge {
     HalfEdge* next;
@@ -52,6 +53,10 @@ class Mesh : public Geometry {
         void calcNormals();
         void bindBuffers();
         
+        Mesh();
+
         Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<unsigned int> connectivityBuffer);
         ~Mesh();
 };
+
+#endif
