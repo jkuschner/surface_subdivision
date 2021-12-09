@@ -40,3 +40,22 @@ To calculate the position of new points, we take another weighted average of the
 Similar to the previous calculation, this newly calculated position will get stored in the Edge's `newPos` field so that it does not affect subsequent vertex calculations.
 
 ## Topology Updates
+The rest of step 2 and step 3 get handled by a combination of the `split` and `flip` functions. 
+
+The `split` function takes and edge and adds an additional one that splits it down the middle, turning two triangles into four triangles. It also needs to create new Halfedges, Faces, Points, and Edges, connect them appropriately, and add them to the Mesh.
+
+The `flip` function take an edge and rotates it 90 degrees so that it connects the opposite vertices of the two triangles it in the middle of. No new structures are created in this function, but the existing pointers need to be rearranged appropriately. 
+
+The `split` and `flip` functions visualized below:
+
+![split](images/split.png)
+
+![flip](images/flip.png)
+
+To execute the subdivision algorithm in terms of these new functions:
+1. Split every edge, creating the topology for all of the new vertices.
+2. Flip every *new* edge that connects a *new* and *old* vertex, completing the arrangemnt of each original triangle into four subtriangles.
+
+Notice that for step 2, we need to distinguish between new and old edges and vertices. This is where the `isNew` field for both Edges and Points comes into play.
+
+## Final Steps
