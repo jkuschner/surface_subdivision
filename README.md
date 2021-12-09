@@ -73,3 +73,21 @@ To create the position and normal buffers, we iterate over all of the Points in 
 To create the connectivity buffer, we iterate over all of the faces in the Mesh's `faces` vector and add each of the three Points' `index` fields to the buffer such that each set of 3 entries in the connectivity buffer represents a triangle.
 
 Once these buffers are created, all that is left to do is bind them with OpenGL and view the smooth mesh!
+
+# Demonstration
+Unfortunately, I was unable to successfully complete the loop subdivsion algorithm and display the desired results. Instead, I will explain some of the challenges I encountered, and how I overcame them(except for one I'm currently stuck on!).
+
+## Constructing the Mesh
+The first major challenge of this project was parsing a given triangle mesh in .obj format into the Halfedge mesh. In the beginning I was not sure how to go about doing this, but my first two steps were clear. Using the position buffer, create all of the Point structures with their `pos` fields initialized. I also used the `index` field to keep track of where in the original buffer each point was located.
+
+I knew that once I was able to set all of the HalfEdge pointers, the rest of the Mesh would be relatively easy to finish. To interpret the connectivity buffer, I read three elements at a time, creating a list of triangles each containing the proper index for all of the vertices on it. Then for each triangle, I created 3 HalfEdges and set their `src` pointers. From here I could also set the `next` and `face` pointers since each of these 3 HalfEdges pointed to the next and they all belonged to the same face. 
+
+The tricky pointer to set would be `flip` since the flip of every HalfEdge belonged to a different face. To handle this, I would store each HalfEdge pointer in a map searchable by the index of the vertices that the HalfEdge connects. Then, once all of the HalfEdges are created, I can iterate over the list of all of them and search for the flipped HalfEdge by searching for the same Point indices that the original HalfEdge connects but in reverse order.
+
+Once `flip` is done, it becomes very easy to create all of the Edges and set all of the `parent` pointers, since every HalfEdge's `flip` belongs to the same Edge.
+
+## The split function
+The next major challenge was writing the `split` function described above. While the `flip` function was certainly non-trivial, it is considerably easier than `split`. In my implementation of the `split` function, I need to create 4 new Edges, 1 new Point, and 6 new HalfEdges. I also needed to remove one Edge and reassign the pointers for 2 existing HalfEdges. The harderst part of implementing this function was setting the pointers in the right order such that I did not "lose" the pointer to any of the HalfEdges in the local mesh by reassigning pointers that pointed to it. I had to make sure that every step along the way, every HalfEdge had something pointing to it.
+
+## The Showstopping Segfault
+This is the final challenge I encountered on this project, and as of now, I still don't know the solution. As the title says, this bug resulted in a segmentation fault, so normally one could just use some print statement to figure out where it happens and then just fix the bad pointer reference(or dereference).
