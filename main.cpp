@@ -83,11 +83,6 @@ void initialize(void){
     // TODO: initialize Mesh ico
     ico = Mesh(ico_obj.vertexBuffer, ico_obj.connectivityBuffer);
     std::cout << "Mesh initialized" << std::endl;
-    std::cout << "Dumping all Point pointers" << std::endl;
-    for(int i = 0; i < ico.pts.size(); i++) {
-        std::cout << "pts[" << i << "]: " << ico.pts[i] << std::endl;
-        std::cout << "pts->he: " << ico.pts[i]->he << std::endl;
-    }
     ico.subdivide();
     std::cout << "subdivision complete" << std::endl;
     ico.calcNormals();

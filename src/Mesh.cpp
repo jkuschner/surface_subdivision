@@ -41,7 +41,7 @@ void Mesh::subdivide() {
     }
     // set newPos field for all existing points
     for(int i = 0; i < pts.size(); i++) {
-        std::cout << "pts[i]->he: " << pts[i]->he << std::endl;
+        std::cout << "pts[" << i << "]->he: " << pts[i]->he << std::endl;
         //std::cout << "pts[i]->he->next: " << pts[i]->he->next << std::endl;
         pts[i]->newPos = movePoint(pts[i]);
     }
@@ -129,15 +129,6 @@ void Mesh::flip(Edge* edge) {
  */
 glm::vec3 Mesh::movePoint(Point* p) {
     std::cout << "starting movePoint" << std::endl;
-    for(int i = 0; i < hes.size(); i++) {
-        if(p->he == hes[i]) {
-            std::cout << "p->he found :)" << std::endl;
-            break;
-        }
-        if(i == hes.size()-1) {
-            std::cout << "p->he NOT FOUND" << std::endl;
-        }
-    }
     std::vector<glm::vec3> valence;
     struct HalfEdge* he;
     struct HalfEdge* he0;
@@ -146,13 +137,12 @@ glm::vec3 Mesh::movePoint(Point* p) {
     }
     he0 = p->he;
     he = he0;
-    std::cout << "starting do while" << std::endl;
-    std::cout << "he0: " << he0 << std::endl;
-    std::cout << "he: " << he << std::endl;
-    std::cout << "he->flip: " << p->he->flip << std::endl;
+    //std::cout << "starting do while" << std::endl;
+//    std::cout << "he0: " << he0 << std::endl;
+ //   std::cout << "he: " << he << std::endl;
     // add all adjacent point positions to valence
     do {
-        valence.push_back(he->flip->src->pos);
+        valence.push_back(he->flip->src->pos); // showstopper
         std::cout << "here" << std::endl;
         he = he->flip->next;
     } while(he != he0);
@@ -363,7 +353,6 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         p->he = nullptr;
         this->pts.push_back(p);
     }
-    std::cout << "Point list created..." << std::endl;
     for(int i = 0; i < connectivityBuffer.size(); i++) {
         // 2. create list of triangles
         if (i % 3 == 0) {
@@ -441,12 +430,6 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         this->hes[i]->flip = m[key];
     }
 
-    for(int i = 0; i < this->hes.size(); i++) {
-        if(this->hes[i]->flip->flip != this->hes[i]) {
-            std::cout << "FLIP ERROR" << std::endl;
-        }
-    }
-    std::cout << "hedge flips set..." << std::endl;
 
     struct Edge* e;
     for(int i = 0; i < this->hes.size(); i++) {
@@ -459,15 +442,9 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
             this->edges.push_back(e);
         }
     }
-    std::cout << "edges created..." << std::endl;    uint fc = 0;
-    std::cout << "checking if all hedge pointers are valid" << std::endl;
-    for(int i = 0; i < hes.size(); i++) {
-        std::cout << "this: " << hes[i] << std::endl;
-        std::cout << "next: " << hes[i]->next << std::endl;
-        std::cout << "flip: " << hes[i]->flip << std::endl;
-    }
-    std::cout << "all hedge pointers valid" << std::endl;
+
     std::cout << "checking if all Point->he pointers are valid..." << std::endl;
+    uint fc = 0;
     for(int i = 0; i < this->pts.size(); i++) {
         for(int j = 0; j < this->hes.size(); j++) {
             if(this->pts[i]->he == this->hes[j]) {
@@ -486,7 +463,6 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         std::cout << "pts[" << i << "]: " << pts[i] << std::endl;
         std::cout << "pts->he: " << pts[i]->he << std::endl;
     }
-
 
 }
 
