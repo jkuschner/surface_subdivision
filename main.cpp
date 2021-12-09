@@ -82,7 +82,18 @@ void initialize(void){
     ico_obj.init("models/ico.obj");
     // TODO: initialize Mesh ico
     ico = Mesh(ico_obj.vertexBuffer, ico_obj.connectivityBuffer);
-    
+    std::cout << "Mesh initialized" << std::endl;
+    std::cout << "Dumping all Point pointers" << std::endl;
+    for(int i = 0; i < ico.pts.size(); i++) {
+        std::cout << "pts[" << i << "]: " << ico.pts[i] << std::endl;
+        std::cout << "pts->he: " << ico.pts[i]->he << std::endl;
+    }
+    ico.subdivide();
+    std::cout << "subdivision complete" << std::endl;
+    ico.calcNormals();
+    std::cout << "normals calculated" << std::endl;
+    ico.bindBuffers();
+    std::cout << "buffers Bound" << std::endl;
     // Initialize camera (set default values)
     camera.eye_default = glm::vec3(0.0f, 0.2f, 5.0f);
     camera.target_default = glm::vec3(0.0f, 0.2f, 0.0f);

@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "Geometry.h"
 #include <iostream>
+#include <stdio.h>
 #include <vector>
 #ifndef __MESH_H__
 #define __MESH_H__
@@ -44,7 +45,7 @@ class Mesh : public Geometry {
 
         //void init(const char* filename);
 
-        static glm::vec3 movePoint(Point* p);
+        glm::vec3 movePoint(Point* p);
 
         Point* makePoint(Edge* edge);
         std::vector<Edge*> split(Edge* edge);
@@ -57,7 +58,6 @@ class Mesh : public Geometry {
         void bindBuffers();
         
         Mesh();
-
         Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<unsigned int> connectivityBuffer);
         ~Mesh();
 };

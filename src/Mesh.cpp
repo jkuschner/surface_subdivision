@@ -1,3 +1,5 @@
+#include <map>
+#include <utility>
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #include <GLUT/glut.h>
@@ -6,8 +8,6 @@
 #include <GL/glut.h>
 #endif
 
-#include <unordered_map>
-#include <utility>
 #include "Mesh.h"
 
 /*
@@ -32,10 +32,21 @@ typedef unsigned int uint;
  * A single iteration of the subdivision algorithm
  */
 void Mesh::subdivide() {
+    std::cout << "starting subdivide..." << std::endl;
+
+    std::cout << "Dumping all Point pointers" << std::endl;
+    for(int i = 0; i < pts.size(); i++) {
+        std::cout << "pts[" << i << "]: " << pts[i] << std::endl;
+        std::cout << "pts->he: " << pts[i]->he << std::endl;
+    }
     // set newPos field for all existing points
     for(int i = 0; i < pts.size(); i++) {
-        pts[i]->newPos = Mesh::movePoint(pts[i]);
+        std::cout << "pts[i]->he: " << pts[i]->he << std::endl;
+        //std::cout << "pts[i]->he->next: " << pts[i]->he->next << std::endl;
+        pts[i]->newPos = movePoint(pts[i]);
     }
+    std::cout << "newPos field set for Pts" << std::endl;
+    // TODO: set newPos field for all edges
     
     // make new points and edges by splitting all edges
     std::vector<Edge*> newEdges, tmpEdges;
@@ -50,6 +61,7 @@ void Mesh::subdivide() {
             newEdges.push_back(tmpEdges[j]);
         }
     }
+    std::cout << " all edges split... " << std::endl;
     
     // free all of the now obsolete Edge pointers
     for (int i = 0; i < edges.size(); i++) {
@@ -67,6 +79,7 @@ void Mesh::subdivide() {
             }
         }
     }
+    std::cout << "edges flipped" << std::endl;
 
     // set all pos Point fields to newPos
     // and set all isNew Point fields to false
@@ -114,16 +127,37 @@ void Mesh::flip(Edge* edge) {
  * @param p: The original Point
  * @return: the vector location of the new position
  */
-static glm::vec3 movePoint(Point* p) {
+glm::vec3 Mesh::movePoint(Point* p) {
+    std::cout << "starting movePoint" << std::endl;
+    for(int i = 0; i < hes.size(); i++) {
+        if(p->he == hes[i]) {
+            std::cout << "p->he found :)" << std::endl;
+            break;
+        }
+        if(i == hes.size()-1) {
+            std::cout << "p->he NOT FOUND" << std::endl;
+        }
+    }
     std::vector<glm::vec3> valence;
     struct HalfEdge* he;
     struct HalfEdge* he0;
+    if (p->he == nullptr) {
+        std::cout << "p->he is NULL" << std::endl;
+    }
     he0 = p->he;
+    he = he0;
+    std::cout << "starting do while" << std::endl;
+    std::cout << "he0: " << he0 << std::endl;
+    std::cout << "he: " << he << std::endl;
+    std::cout << "he->flip: " << p->he->flip << std::endl;
     // add all adjacent point positions to valence
     do {
         valence.push_back(he->flip->src->pos);
+        std::cout << "here" << std::endl;
         he = he->flip->next;
     } while(he != he0);
+
+    std::cout << "added point pos to valence..." << std::endl;
 
     // k == valence.size()
     float beta = 3.0f / 16.0f;
@@ -303,10 +337,7 @@ struct Triangle {
     struct Point* v3;
 };
 
-struct Key {
-    uint a;
-    uint b;
-};
+Mesh::Mesh() {}
 
 Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBuffer) {
     /* object contains list linear array of vertex
@@ -329,25 +360,30 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         p->pos = vertexBuffer[i];
         p->isNew = false;
         p->index = i;
-        pts.push_back(p);
+        p->he = nullptr;
+        this->pts.push_back(p);
     }
+    std::cout << "Point list created..." << std::endl;
     for(int i = 0; i < connectivityBuffer.size(); i++) {
         // 2. create list of triangles
         if (i % 3 == 0) {
-            t.v1 = pts[connectivityBuffer[i]];
+            t.v1 = this->pts[connectivityBuffer[i] - 1];
         } else if (i % 3 == 1) {
-            t.v2 = pts[connectivityBuffer[i]];
+            t.v2 = this->pts[connectivityBuffer[i] - 1];
         } else {
-            t.v3 = pts[connectivityBuffer[i]];
+            t.v3 = this->pts[connectivityBuffer[i] - 1];
             t_list.push_back(t);
         }
     }
+    std::cout << "Triangle list created..." << std::endl;
    
     struct HalfEdge* hedge1;
     struct HalfEdge* hedge2;
     struct HalfEdge* hedge3;
     struct Face* f;
-    std::unordered_map< Key, HalfEdge* > m;
+    std::map< std::pair<uint, uint>, HalfEdge* > m;
+    std::pair<uint,uint> tmpkey;
+    std::cout << "map and tmpkey initialized..." << std::endl;
     // 3. create 3 halfedges for each triange
     // 4. populate map w/ vertex pairs and hedges
     for(int i = 0; i < t_list.size(); i++) {
@@ -355,13 +391,14 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         hedge2 = new HalfEdge;
         hedge3 = new HalfEdge;
         // assign src ptr
-        hedge1->src = t_list[i].v1;
-        hedge2->src = t_list[i].v2;
-        hedge3->src = t_list[i].v3;
+        hedge1->src = pts[t_list[i].v1->index];
+        hedge2->src = pts[t_list[i].v2->index];
+        hedge3->src = pts[t_list[i].v3->index];
+        // 3. create 3 halfedges for each triange
         // assign Point.he ptr
-        t_list[i].v1->he = hedge1;
-        t_list[i].v2->he = hedge2;
-        t_list[i].v3->he = hedge3;
+        pts[t_list[i].v1->index]->he = hedge1;
+        pts[t_list[i].v2->index]->he = hedge2;
+        pts[t_list[i].v3->index]->he = hedge3;
         // assign next ptr
         hedge1->next = hedge2;
         hedge2->next = hedge3;
@@ -374,48 +411,83 @@ Mesh::Mesh(std::vector<glm::vec3> vertexBuffer, std::vector<uint> connectivityBu
         hedge2->face = f;
         hedge3->face = f;
         // add hedges to Mesh's vector
-        hes.push_back(hedge1);
-        hes.push_back(hedge2);
-        hes.push_back(hedge3);
+        this->hes.push_back(hedge1);
+        this->hes.push_back(hedge2);
+        this->hes.push_back(hedge3);
         // populate map
         uint tmp1, tmp2, tmp3; //tmp vars to hold point indices
         tmp1 = t_list[i].v1->index;
         tmp2 = t_list[i].v2->index;
         tmp3 = t_list[i].v3->index;
-        struct Key key1 = {tmp1, tmp2};
-        struct Key key2 = {tmp2, tmp3};
-        struct Key key3 = {tmp3, tmp1};
-
-        m.insert(std::make_pair(key1, hedge1));
-        m.insert(std::make_pair(key2, hedge2));
-        m.insert(std::make_pair(key3, hedge3));
-        faces.push_back(f);
+        tmpkey = std::make_pair(tmp1, tmp2);
+        m.insert(std::make_pair(tmpkey, hedge1));
+        tmpkey = std::make_pair(tmp2, tmp3);
+        m.insert(std::make_pair(tmpkey, hedge2));
+        tmpkey = std::make_pair(tmp3, tmp1);
+        m.insert(std::make_pair(tmpkey, hedge3));
+        this->faces.push_back(f);
     }
+    std::cout << "hedges created and map populated" << std::endl;
+
+
 
     // 5. for each hedge get the flip using map
-    struct Key key;
-    for(int i = 0; i < hes.size(); i++) {
+    std::pair<uint, uint> key;
+    for(int i = 0; i < this->hes.size(); i++) {
         // hes[i] goes from src->dest, so the flip is dest->src
         // where dest := he->next->src
-        //key = std::make_pair(hes[i]->next->src->index, 
-         //                                   hes[i]->src->index);
-        key.a = hes[i]->next->src->index;
-        key.b = hes[i]->src->index;
-
-        hes[i]->flip = m[key];
+        key = std::make_pair(this->hes[i]->next->src->index, 
+                                            this->hes[i]->src->index);
+        this->hes[i]->flip = m[key];
     }
-        //TODO: Make an Edge for every PAIR of hedges
-    struct Edge* e;
-    for(int i = 0; i < hes.size(); i++) {
-        if(hes[i]->parent == nullptr) {
-            e = new Edge;
-            hes[i]->parent = e;
-            hes[i]->flip->parent = e;
-            e->he = hes[i];
-            e->isNew = false;
-            edges.push_back(e);
+
+    for(int i = 0; i < this->hes.size(); i++) {
+        if(this->hes[i]->flip->flip != this->hes[i]) {
+            std::cout << "FLIP ERROR" << std::endl;
         }
     }
+    std::cout << "hedge flips set..." << std::endl;
+
+    struct Edge* e;
+    for(int i = 0; i < this->hes.size(); i++) {
+        if(this->hes[i]->parent == nullptr) {
+            e = new Edge;
+            this->hes[i]->parent = e;
+            this->hes[i]->flip->parent = e;
+            e->he = this->hes[i];
+            e->isNew = false;
+            this->edges.push_back(e);
+        }
+    }
+    std::cout << "edges created..." << std::endl;    uint fc = 0;
+    std::cout << "checking if all hedge pointers are valid" << std::endl;
+    for(int i = 0; i < hes.size(); i++) {
+        std::cout << "this: " << hes[i] << std::endl;
+        std::cout << "next: " << hes[i]->next << std::endl;
+        std::cout << "flip: " << hes[i]->flip << std::endl;
+    }
+    std::cout << "all hedge pointers valid" << std::endl;
+    std::cout << "checking if all Point->he pointers are valid..." << std::endl;
+    for(int i = 0; i < this->pts.size(); i++) {
+        for(int j = 0; j < this->hes.size(); j++) {
+            if(this->pts[i]->he == this->hes[j]) {
+                fc++;
+                break;
+            }
+            if (j == this->hes.size()-1) {
+                std::cout << "pts[" << i << "] not found in this->hes" << std::endl;
+            }
+        }
+    }
+    std::cout << "found " << fc << " out of " << this->pts.size() << " points" << std::endl;
+
+    std::cout << "Dumping all Point pointers" << std::endl;
+    for(int i = 0; i < pts.size(); i++) {
+        std::cout << "pts[" << i << "]: " << pts[i] << std::endl;
+        std::cout << "pts->he: " << pts[i]->he << std::endl;
+    }
+
+
 }
 
 void Mesh::updatePointPos() {

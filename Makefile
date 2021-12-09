@@ -6,7 +6,7 @@ LDFLAGS = -framework GLUT -framework OpenGL -L./lib/mac/ -lm  -lfreeimage
 RM = /bin/rm -f
 all: ModelViewer
 ModelViewer: main.o Shader.o Camera.o Obj.o Mesh.o shaders/normal.frag shaders/projective.vert
-	$(CC) -o ModelViewer main.o Shader.o Camera.o Obj.o $(LDFLAGS)
+	$(CC) -o ModelViewer main.o Shader.o Camera.o Obj.o Mesh.o $(LDFLAGS)
 main.o: main.cpp include/hw2AutoScreenshots.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c main.cpp 
 Shader.o: src/Shader.cpp
