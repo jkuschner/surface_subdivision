@@ -42,7 +42,7 @@ Similar to the previous calculation, this newly calculated position will get sto
 ## Topology Updates
 The rest of step 2 and step 3 get handled by a combination of the `split` and `flip` functions. 
 
-The `split` function takes and edge and adds an additional one that splits it down the middle, turning two triangles into four triangles. It also needs to create new Halfedges, Faces, Points, and Edges, connect them appropriately, and add them to the Mesh.
+The `split` function takes and edge and adds an additional one that splits it down the middle, turning two triangles into four triangles. It also needs to create new Halfedges, Faces, Points, and Edges, connect them appropriately, and add them to the Mesh. Since we saved the position of the new Point in the `newPos` field from before, we can also update the new Point to hold that value in its `newPos` field.
 
 The `flip` function take an edge and rotates it 90 degrees so that it connects the opposite vertices of the two triangles it in the middle of. No new structures are created in this function, but the existing pointers need to be rearranged appropriately. 
 
@@ -59,3 +59,17 @@ To execute the subdivision algorithm in terms of these new functions:
 Notice that for step 2, we need to distinguish between new and old edges and vertices. This is where the `isNew` field for both Edges and Points comes into play.
 
 ## Final Steps
+
+Once the topology of the mesh is done being updated, the geometry can simply be updated by setting all of the `pos` fields in the points to the value of their `newPos` fields. After this step the iteration of the loop subdivsion algorithm is complete. From here one could either continue iterating to create an even smoother mesh, or display the mesh as it is. To display the mesh, two important steps need to happen:
+1. The vertex normals need to be calculated and updated in each Point
+2. The position, normal, and connectivity buffers need to be recreated and bound such that OpenGL can display the mesh.
+
+### Vertex normals
+To calculate the vertex normals, we take a area-weighted average of all of the face normals surrounding that vertex. To do this, we simply need to take the cross product of the two vectors sourced at the vertex for each adjacent face. The direction of the cross products is precisly the direction of each face's normal vector, and the magnitude of each cross products is directly proportional to that face's area. Therefore, we accumulate all of the cross products into a single vector to get the proper weighted average and normalize the result. All that is left to do is update the `normal` field for that Point.
+
+### Buffers
+To create the position and normal buffers, we iterate over all of the Points in the Mesh's `pts` vector and populate the buffers with the `pos` and `normal` value for each Point. Meanwhile we also set `index` field of each Point to match that Point's data location within the vector and normal buffers.
+
+To create the connectivity buffer, we iterate over all of the faces in the Mesh's `faces` vector and add each of the three Points' `index` fields to the buffer such that each set of 3 entries in the connectivity buffer represents a triangle.
+
+Once these buffers are created, all that is left to do is bind them with OpenGL and view the smooth mesh!
