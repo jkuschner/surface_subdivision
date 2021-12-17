@@ -1,6 +1,6 @@
 # Loop Subdivision
 
-In this project, I created a program that should be able to parse a .obj file that describes a triangle mesh into a Halfedge mesh. Then, the program is able to subdivide the triangles in the mesh such that the surfaces appear smoother with each iteration of the subdivision algorithm. The subdivision algorithm has the following steps:
+In this project, I created a program that parses a .obj file that describes a triangle mesh into a Halfedge mesh. Then, the program is able to subdivide the triangles in the mesh such that the surfaces appear smoother with each iteration of the subdivision algorithm. The subdivision algorithm has the following steps:
 1. Update the position of all vertices based on it's surrounding vertices.
 2. Create a new vertex, who's position is also based on surrounding vertices for every edge in the mesh
 3. Connect each new vertex with a new edge, turning each triangle in the mesh into 4 subtriangles
